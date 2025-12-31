@@ -7,6 +7,7 @@ public class ExpressionParser{
     
     public static double Parse(String expression){
         List<String> tokens = tokenizer(expression);
+        tokens = solveParentheses(tokens);
         tokens = solveMulDiv(tokens);
         return solveAddSub(tokens);
     }
@@ -36,6 +37,41 @@ public class ExpressionParser{
         return tokens;
     }
 
+    public static List<String> solveParentheses(List<String> tokens){
+        List<String> result = new ArrayList<>(tokens);
+
+        while(result.contains("(")){
+            
+            int close = result.indexOf(")");
+            if(close == -1)
+                throw new IllegalArgumentException("Invalid Syntax");
+
+            int open = -1;
+            for(int i = close - 1; i >= 0; i--){
+                if(result.get(i).equals("(")){
+                    open = i;
+                    break;
+                }
+            }
+
+            if(open == -1)
+                throw new IllegalArgumentException("Invalid Syntax");
+            
+            List<String> subList = new ArrayList<>(result.subList(open + 1, close));
+
+            subList = solveMulDiv(subList);
+            double subListSolve = solveAddSub(subList);
+
+            for(int i = close; i >= open; i--){
+                result.remove(i);
+            }
+
+            result.add(open, String.valueOf(subListSolve));
+        }
+        
+        return result;
+    }
+
     public static List<String> solveMulDiv(List<String> tokens){
         List<String> result = new ArrayList<>();
 
@@ -50,7 +86,7 @@ public class ExpressionParser{
                 double left = Double.parseDouble(result.remove(result.size() - 1));
                 double right = Double.parseDouble(tokens.get(++i));
  
-                if(token.equals("/") || token.equals("%") && right == 0){
+                if((token.equals("/") || token.equals("%")) && right == 0){
                     throw new ArithmeticException("Division by Zero");
                 }
 
